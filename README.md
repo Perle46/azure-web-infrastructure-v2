@@ -30,7 +30,7 @@ Follow-up to my final ASIR project, [Azure Web Infrastructure with Terraform and
   │ snet-web 172.16.1.0/24 · NSG: HTTP from Internet only
   │                 │                  │  no default outbound access
   │      ┌─────────┐   ┌─────────┐
-  │      │ zone 2  │   │ zone 3  │     VM Scale Set (Ubuntu 24.04, B2ats_v2)
+  │      │ zone 1  │   │ zone 3  │     VM Scale Set (Ubuntu 24.04, B2ats_v2)
   │      │ Apache  │   │ Apache  │     2–3 instances, autoscale on CPU
   │      └─────────┘   └─────────┘     configured by cloud-init
   └────────────────────────────────────┘
@@ -40,7 +40,7 @@ Follow-up to my final ASIR project, [Azure Web Infrastructure with Terraform and
   rg-tfstate: Storage account (ZRS, versioning, no shared keys) ── Terraform state
 ```
 
-Region: **Spain Central**. The student subscription only allows five European regions, and France Central (used in v1) does not offer B-series VMs to it. In Spain Central the B-series is available in zones 2 and 3, which is enough to survive the loss of one zone.
+Region: **Austria East**. The student subscription only allows five European regions. France Central (used in v1) does not offer B-series VMs to it, and Spain Central returned `OverconstrainedZonalAllocationRequest` (no capacity for the size in those zones) on two attempts. In Austria East the B-series is available in zones 1 and 3, which is enough to survive the loss of one zone. The Terraform state stays in Spain Central.
 
 ## Repository structure
 
@@ -115,6 +115,32 @@ terraform destroy
 ```
 
 The role assignment for the state can take a few minutes to apply. If `terraform init` in `infra/` returns a 403 error, wait and try again.
+
+## Results
+
+Deployed on 6 October 2026 in Austria East: 13 resources in about 2 minutes, on top of the state storage created by `bootstrap/`.
+
+<img src="docs/images/terraform-graph.png" alt="Terraform dependency graph" width="900">
+
+*Dependency graph generated with `terraform graph | dot -Tpng`, grouped by module.*
+
+**Load balancing across zones.** Each instance writes its own name and availability zone into the page (from the Azure Instance Metadata Service), so every refresh shows which instance answered:
+
+<img src="docs/images/website-zone1.png" alt="Page served from zone 1" width="440"> <img src="docs/images/website-zone3.png" alt="Page served from zone 3" width="440">
+
+<img src="docs/images/load-balancing-test.png" alt="16 requests split between both instances" width="600">
+
+**Problems found during deployment**
+
+- **No capacity in Spain Central.** The scale set failed twice with `OverconstrainedZonalAllocationRequest` for `B2ats_v2` in zones 2 and 3, so the web tier moved to Austria East (zones 1 and 3).
+- **Resource group recreated with the same name.** Moving region deleted `rg-webv2` and created it again right away. For several minutes Azure returned a mix of the old and new resources, which share the same IDs. The region is now part of the resource group name (`rg-webv2-austriaeast`), so a region change never reuses an ID that is still being deleted.
+- **Apache version still visible.** The `Server` header showed `Apache/2.4.58 (Ubuntu)`. Apache loads `conf-enabled/` alphabetically, and its own `security.conf` (`ServerTokens OS`) overrode my `hardening.conf`. Renaming the file to `zz-hardening.conf` fixed it. The header is now `Server: Apache`.
+
+**Updating the instances without downtime.** cloud-init only runs on first boot, so after the Apache fix the instances were reimaged one at a time while a request was sent every second:
+
+<img src="docs/images/reimage-availability.png" alt="Availability while reimaging" width="700">
+
+280 of 284 requests succeeded. The 4 failures happened in the first seconds of each reimage, before the 5-second health probe marked the instance as down. A shorter probe interval, or removing the instance from the backend pool before reimaging, would close that gap.
 
 ## Next steps
 

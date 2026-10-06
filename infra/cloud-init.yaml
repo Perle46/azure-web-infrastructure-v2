@@ -15,8 +15,10 @@ write_files:
       APT::Periodic::Update-Package-Lists "1";
       APT::Periodic::Unattended-Upgrade "1";
 
-  # Hide the Apache version and OS in headers and error pages
-  - path: /etc/apache2/conf-available/hardening.conf
+  # Hide the Apache version and OS in headers and error pages.
+  # The zz- prefix loads it after Apache's own security.conf, which sets
+  # "ServerTokens OS" and would otherwise override it.
+  - path: /etc/apache2/conf-available/zz-hardening.conf
     content: |
       ServerTokens Prod
       ServerSignature Off
@@ -54,6 +56,6 @@ write_files:
       HTML
 
 runcmd:
-  - a2enconf hardening
+  - a2enconf zz-hardening
   - /usr/local/bin/build-site.sh
   - systemctl restart apache2

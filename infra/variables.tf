@@ -7,7 +7,7 @@ variable "name" {
 variable "location" {
   description = "Azure region (the student subscription only allows a few European regions)"
   type        = string
-  default     = "spaincentral"
+  default     = "austriaeast"
 }
 
 variable "address_space" {
@@ -17,9 +17,9 @@ variable "address_space" {
 }
 
 variable "zones" {
-  description = "Availability zones for the instances (the B-series is only offered in zones 2 and 3 of Spain Central for this subscription)"
+  description = "Availability zones for the instances (the B-series is only offered in zones 1 and 3 of Austria East for this subscription)"
   type        = list(string)
-  default     = ["2", "3"]
+  default     = ["1", "3"]
 
   validation {
     condition     = length(var.zones) >= 2

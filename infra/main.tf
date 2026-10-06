@@ -5,8 +5,10 @@ locals {
   }
 }
 
+# The region is part of the name so that moving to another region never
+# reuses the ID of a resource group that Azure is still deleting
 resource "azurerm_resource_group" "this" {
-  name     = "rg-${var.name}"
+  name     = "rg-${var.name}-${var.location}"
   location = var.location
   tags     = local.tags
 }

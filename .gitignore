@@ -16,3 +16,6 @@ backend.hcl
 # Keys
 *.pem
 id_*
+
+# Local logs (may contain subscription IDs)
+*.log
