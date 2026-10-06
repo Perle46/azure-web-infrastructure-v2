@@ -28,7 +28,6 @@ module "loadbalancer" {
   name                = var.name
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
-  zones               = var.zones
   tags                = local.tags
 }
 

@@ -26,8 +26,10 @@ resource "azurerm_linux_virtual_machine_scale_set" "web" {
     version   = "latest"
   }
 
+  # 64 GiB Premium SSD (P6): the disk type included in the Azure free services
   os_disk {
-    storage_account_type = "Standard_LRS"
+    storage_account_type = "Premium_LRS"
+    disk_size_gb         = 64
     caching              = "ReadWrite"
   }
 

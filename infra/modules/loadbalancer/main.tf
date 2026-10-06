@@ -4,7 +4,7 @@ resource "azurerm_public_ip" "this" {
   location            = var.location
   allocation_method   = "Static"
   sku                 = "Standard"
-  zones               = var.zones
+  zones               = ["1", "2", "3"] # zone-redundant
   tags                = var.tags
 }
 

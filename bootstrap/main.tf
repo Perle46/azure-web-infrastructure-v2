@@ -30,7 +30,7 @@ data "azurerm_client_config" "current" {}
 variable "location" {
   description = "Azure region for the state storage"
   type        = string
-  default     = "francecentral"
+  default     = "spaincentral"
 }
 
 # Storage account names must be globally unique

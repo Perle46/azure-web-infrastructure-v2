@@ -5,9 +5,9 @@ variable "name" {
 }
 
 variable "location" {
-  description = "Azure region"
+  description = "Azure region (the student subscription only allows a few European regions)"
   type        = string
-  default     = "francecentral"
+  default     = "spaincentral"
 }
 
 variable "address_space" {
@@ -17,15 +17,20 @@ variable "address_space" {
 }
 
 variable "zones" {
-  description = "Availability zones for the instances and the public IP"
+  description = "Availability zones for the instances (the B-series is only offered in zones 2 and 3 of Spain Central for this subscription)"
   type        = list(string)
-  default     = ["1", "2", "3"]
+  default     = ["2", "3"]
+
+  validation {
+    condition     = length(var.zones) >= 2
+    error_message = "Use at least 2 availability zones for high availability."
+  }
 }
 
 variable "vm_size" {
   description = "Size of each web instance"
   type        = string
-  default     = "Standard_B2ts_v2"
+  default     = "Standard_B2ats_v2"
 }
 
 variable "min_instances" {
