@@ -1,0 +1,59 @@
+#cloud-config
+# Runs on the first boot of every instance in the scale set.
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - apache2
+  - unattended-upgrades
+
+write_files:
+  # Install security updates automatically every day
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+  # Hide the Apache version and OS in headers and error pages
+  - path: /etc/apache2/conf-available/hardening.conf
+    content: |
+      ServerTokens Prod
+      ServerSignature Off
+      TraceEnable Off
+
+  - path: /usr/local/bin/build-site.sh
+    permissions: "0755"
+    content: |
+      #!/bin/sh
+      # Writes a page showing which instance and zone served the request
+      imds="http://169.254.169.254/metadata/instance/compute"
+      name=$(curl -s -H Metadata:true "$imds/name?api-version=2021-02-01&format=text")
+      zone=$(curl -s -H Metadata:true "$imds/zone?api-version=2021-02-01&format=text")
+      cat > /var/www/html/index.html <<HTML
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <title>Azure Web v2</title>
+        <style>
+          body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0;
+                 display: grid; place-items: center; height: 100vh; margin: 0; }
+          main { text-align: center; }
+          code { background: #1e293b; padding: 0.2em 0.5em; border-radius: 4px; }
+        </style>
+      </head>
+      <body>
+        <main>
+          <h1>Azure Web v2</h1>
+          <p>Served by <code>${name}</code> in availability zone <code>${zone}</code></p>
+          <p>Deployed with Terraform and configured with cloud-init</p>
+        </main>
+      </body>
+      </html>
+      HTML
+
+runcmd:
+  - a2enconf hardening
+  - /usr/local/bin/build-site.sh
+  - systemctl restart apache2

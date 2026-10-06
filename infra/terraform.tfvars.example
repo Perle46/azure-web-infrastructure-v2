@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars and adjust. terraform.tfvars is ignored by Git.
+location            = "francecentral"
+vm_size             = "Standard_B2ts_v2"
+min_instances       = 2
+max_instances       = 3
+ssh_public_key      = "ssh-ed25519 AAAA... azureuser"
+enable_bastion      = false
